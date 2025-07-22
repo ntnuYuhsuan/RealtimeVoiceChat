@@ -1,7 +1,16 @@
 import logging
 logger = logging.getLogger(__name__)
 
-import transformers
+# 條件性導入transformers - 只在需要時導入以避免依賴問題
+try:
+    import transformers
+    TRANSFORMERS_AVAILABLE = True
+    logger.info("✅ Transformers套件可用，turn detection功能已啟用")
+except ImportError as e:
+    logger.warning(f"⚠️ Transformers套件不可用，turn detection功能將被禁用: {e}")
+    TRANSFORMERS_AVAILABLE = False
+    transformers = None
+
 import collections
 import threading
 import queue
@@ -215,11 +224,16 @@ class TurnDetection:
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         logger.info(f"🎤🔌 Using device: {self.device}")
-        self.tokenizer = transformers.DistilBertTokenizerFast.from_pretrained(model_dir)
-        self.classification_model = transformers.DistilBertForSequenceClassification.from_pretrained(model_dir)
-        self.classification_model.to(self.device)
-        self.classification_model.eval() # Set model to evaluation mode
-        self.max_length: int = 128 # Max sequence length for the model
+        if TRANSFORMERS_AVAILABLE:
+            self.tokenizer = transformers.DistilBertTokenizerFast.from_pretrained(model_dir)
+            self.classification_model = transformers.DistilBertForSequenceClassification.from_pretrained(model_dir)
+            self.classification_model.to(self.device)
+            self.classification_model.eval() # Set model to evaluation mode
+            self.max_length: int = 128 # Max sequence length for the model
+        else:
+            logger.warning("🎤⚠️ Transformers套件不可用，無法初始化模型。turn detection功能將被禁用。")
+            self.max_length = 0 # Disable model usage
+
         self.pipeline_latency: float = pipeline_latency
         self.pipeline_latency_overhead: float = pipeline_latency_overhead
 
@@ -228,19 +242,22 @@ class TurnDetection:
         self._completion_probability_cache_max_size: int = 256 # Max size for the LRU cache
 
         # Warmup the classification model for faster initial predictions
-        logger.info("🎤🔥 Warming up the classification model...")
-        with torch.no_grad():
-            warmup_text = "This is a warmup sentence."
-            inputs = self.tokenizer(
-                warmup_text,
-                return_tensors="pt",
-                truncation=True,
-                padding="max_length",
-                max_length=self.max_length
-            )
-            inputs = {key: value.to(self.device) for key, value in inputs.items()}
-            _ = self.classification_model(**inputs) # Run one prediction
-        logger.info("🎤✅ Classification model warmed up.")
+        if TRANSFORMERS_AVAILABLE:
+            logger.info("🎤🔥 Warming up the classification model...")
+            with torch.no_grad():
+                warmup_text = "This is a warmup sentence."
+                inputs = self.tokenizer(
+                    warmup_text,
+                    return_tensors="pt",
+                    truncation=True,
+                    padding="max_length",
+                    max_length=self.max_length
+                )
+                inputs = {key: value.to(self.device) for key, value in inputs.items()}
+                _ = self.classification_model(**inputs) # Run one prediction
+            logger.info("🎤✅ Classification model warmed up.")
+        else:
+            logger.warning("🎤⚠️ Transformers套件不可用，無法進行模型暖身。")
 
         # Default dynamic pause settings (initialized for speed_factor=0.0)
         self.detection_speed: float = 0.5
@@ -344,6 +361,10 @@ class TurnDetection:
         # If not in cache, run model prediction
         import torch
         import torch.nn.functional as F
+
+        if not TRANSFORMERS_AVAILABLE:
+            logger.warning("🎤⚠️ Transformers套件不可用，無法進行模型預測。")
+            return 0.0 # Return a default value or raise an error
 
         inputs = self.tokenizer(
             sentence,

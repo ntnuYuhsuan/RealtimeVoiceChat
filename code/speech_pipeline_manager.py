@@ -121,41 +121,40 @@ class SpeechPipelineManager:
     """
     def __init__(
             self,
-            tts_engine: str = "kokoro",
+            # 移除TTS相關參數以節省CUDA記憶體
+            # tts_engine: str = "kokoro",  # 已禁用
             llm_provider: str = "ollama",
             llm_model: str = "hf.co/bartowski/huihui-ai_Mistral-Small-24B-Instruct-2501-abliterated-GGUF:Q4_K_M",
             no_think: bool = False,
-            orpheus_model: str = "orpheus-3b-0.1-ft-Q8_0-GGUF/orpheus-3b-0.1-ft-q8_0.gguf",
+            # orpheus_model: str = "orpheus-3b-0.1-ft-Q8_0-GGUF/orpheus-3b-0.1-ft-q8_0.gguf",  # 已禁用
         ):
         """
-        Initializes the SpeechPipelineManager.
+        初始化SpeechPipelineManager（僅STT版本）。
 
-        Sets up configuration, instantiates dependencies (AudioProcessor, LLM, etc.),
-        loads system prompts, initializes state variables (queues, events, flags),
-        measures initial inference latencies, and starts the background worker threads.
+        設定配置、實例化依賴項（LLM等），載入系統提示，
+        初始化狀態變數（隊列、事件、標誌），測量初始推理延遲，
+        並啟動背景工作線程。TTS功能已完全移除以節省CUDA記憶體。
 
         Args:
-            tts_engine: The TTS engine to use (e.g., "kokoro", "orpheus").
-            llm_provider: The LLM backend provider (e.g., "ollama").
-            llm_model: The specific LLM model identifier.
-            no_think: If True, removes specific thinking tags from LLM output.
-            orpheus_model: Path or identifier for the Orpheus TTS model, if used.
+            llm_provider: LLM後端提供者（例如"ollama"）。
+            llm_model: 特定的LLM模型標識符。
+            no_think: 如果為True，從LLM輸出中移除特定思考標籤。
         """
-        self.tts_engine = tts_engine
+        # 移除TTS相關配置
+        # self.tts_engine = tts_engine
         self.llm_provider = llm_provider
         self.llm_model = llm_model
         self.no_think = no_think
-        self.orpheus_model = orpheus_model
+        # self.orpheus_model = orpheus_model
 
         self.system_prompt = system_prompt
-        if tts_engine == "orpheus":
-            self.system_prompt += f"\n{orpheus_prompt_addon}"
+        # 移除TTS引擎特定的系統提示修改
+        # if tts_engine == "orpheus":
+        #     self.system_prompt += f"\n{orpheus_prompt_addon}"
 
         # --- Instance Dependencies ---
-        self.audio = AudioProcessor(
-            engine=self.tts_engine,
-            orpheus_model=self.orpheus_model
-        )
+        # 簡化AudioProcessor初始化，移除TTS參數以節省CUDA記憶體
+        self.audio = AudioProcessor()  # 移除engine和orpheus_model參數
         self.audio.on_first_audio_chunk_synthesize = self.on_first_audio_chunk_synthesize
         self.text_similarity = TextSimilarity(focus='end', n_words=5)
         self.text_context = TextContext()

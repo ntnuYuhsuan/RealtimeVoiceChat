@@ -5,7 +5,7 @@ from logsetup import setup_logging
 setup_logging(logging.INFO)
 logger = logging.getLogger(__name__)
 if __name__ == "__main__":
-    logger.info("🖥️👋 Welcome to local real-time voice chat")
+    logger.info("🖥️👋 歡迎使用繁體中文即時語音聊天系統 (STT專用版)")
 
 from upsample_overlap import UpsampleOverlap
 from datetime import datetime
@@ -28,47 +28,46 @@ from fastapi.staticfiles import StaticFiles
 from starlette.responses import HTMLResponse, Response, FileResponse
 
 USE_SSL = False
-TTS_START_ENGINE = "orpheus"
-TTS_START_ENGINE = "kokoro"
-TTS_START_ENGINE = "coqui"
-TTS_ORPHEUS_MODEL = "Orpheus_3B-1BaseGGUF/mOrpheus_3B-1Base_Q4_K_M.gguf"
-TTS_ORPHEUS_MODEL = "orpheus-3b-0.1-ft-Q8_0-GGUF/orpheus-3b-0.1-ft-q8_0.gguf"
+# 完全禁用TTS功能以節省CUDA記憶體
+TTS_START_ENGINE = None  # 禁用所有TTS引擎
+# 移除TTS模型配置
+# TTS_ORPHEUS_MODEL = "Orpheus_3B-1BaseGGUF/mOrpheus_3B-1Base_Q4_K_M.gguf"
+# TTS_ORPHEUS_MODEL = "orpheus-3b-0.1-ft-Q8_0-GGUF/orpheus-3b-0.1-ft-q8_0.gguf"
 
 LLM_START_PROVIDER = "ollama"
-#LLM_START_MODEL = "qwen3:30b-a3b"
-LLM_START_MODEL = "hf.co/bartowski/huihui-ai_Mistral-Small-24B-Instruct-2501-abliterated-GGUF:Q4_K_M"
-# LLM_START_PROVIDER = "lmstudio"
-# LLM_START_MODEL = "Qwen3-30B-A3B-GGUF/Qwen3-30B-A3B-Q3_K_L.gguf"
+# 建議使用較小的模型以節省資源
+LLM_START_MODEL = "hf.co/unsloth/gemma-3n-E4B-it-GGUF:UD-Q4_K_XL"
+# LLM_START_MODEL = "qwen3:30b-a3b"  # 可選用更大模型
+
 NO_THINK = False
-DIRECT_STREAM = TTS_START_ENGINE=="orpheus"
+DIRECT_STREAM = False  # TTS已禁用，設為False
 
 if __name__ == "__main__":
-    logger.info(f"🖥️⚙️ {Colors.apply('[PARAM]').blue} Starting engine: {Colors.apply(TTS_START_ENGINE).blue}")
-    logger.info(f"🖥️⚙️ {Colors.apply('[PARAM]').blue} Direct streaming: {Colors.apply('ON' if DIRECT_STREAM else 'OFF').blue}")
+    logger.info(f"🖥️⚙️ {Colors.apply('[設定]').blue} TTS引擎: {Colors.apply('已禁用').red}")
+    logger.info(f"🖥️⚙️ {Colors.apply('[設定]').blue} 直接串流: {Colors.apply('關閉').blue}")
+    logger.info(f"🖥️⚙️ {Colors.apply('[設定]').blue} 語言設定: {Colors.apply('繁體中文').green}")
 
 # Define the maximum allowed size for the incoming audio queue
 try:
     MAX_AUDIO_QUEUE_SIZE = int(os.getenv("MAX_AUDIO_QUEUE_SIZE", 50))
     if __name__ == "__main__":
-        logger.info(f"🖥️⚙️ {Colors.apply('[PARAM]').blue} Audio queue size limit set to: {Colors.apply(str(MAX_AUDIO_QUEUE_SIZE)).blue}")
+        logger.info(f"🖥️⚙️ {Colors.apply('[參數]').blue} 音頻隊列大小限制: {Colors.apply(str(MAX_AUDIO_QUEUE_SIZE)).blue}")
 except ValueError:
     if __name__ == "__main__":
-        logger.warning("🖥️⚠️ Invalid MAX_AUDIO_QUEUE_SIZE env var. Using default: 50")
+        logger.warning("🖥️⚠️ 無效的MAX_AUDIO_QUEUE_SIZE環境變數，使用預設值: 50")
     MAX_AUDIO_QUEUE_SIZE = 50
-
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-#from handlerequests import LanguageProcessor
-#from audio_out import AudioOutProcessor
 from audio_in import AudioInputProcessor
 from speech_pipeline_manager import SpeechPipelineManager
 from colors import Colors
 
-LANGUAGE = "en"
-# TTS_FINAL_TIMEOUT = 0.5 # unsure if 1.0 is needed for stability
-TTS_FINAL_TIMEOUT = 1.0 # unsure if 1.0 is needed for stability
+# 設定為繁體中文
+LANGUAGE = "zh-TW"  # 修改為繁體中文
+# 移除TTS相關超時設定
+# TTS_FINAL_TIMEOUT = 1.0
 
 # --------------------------------------------------------------------
 # Custom no-cache StaticFiles
@@ -117,17 +116,18 @@ async def lifespan(app: FastAPI):
     logger.info("🖥️▶️ Server starting up")
     # Initialize global components, not connection-specific state
     app.state.SpeechPipelineManager = SpeechPipelineManager(
-        tts_engine=TTS_START_ENGINE,
+        # 移除TTS相關參數以節省CUDA記憶體
+        # tts_engine=TTS_START_ENGINE,  # 已禁用
         llm_provider=LLM_START_PROVIDER,
         llm_model=LLM_START_MODEL,
         no_think=NO_THINK,
-        orpheus_model=TTS_ORPHEUS_MODEL,
+        # orpheus_model=TTS_ORPHEUS_MODEL,  # 已禁用
     )
 
     app.state.Upsampler = UpsampleOverlap()
     app.state.AudioInputProcessor = AudioInputProcessor(
         LANGUAGE,
-        is_orpheus=TTS_START_ENGINE=="orpheus",
+        is_orpheus=False, # TTS已禁用，設為False
         pipeline_latency=app.state.SpeechPipelineManager.full_output_pipeline_latency / 1000, # seconds
     )
     app.state.Aborting = False # Keep this? Its usage isn't clear in the provided snippet. Minimizing changes.

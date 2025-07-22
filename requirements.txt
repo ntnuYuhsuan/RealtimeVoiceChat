@@ -1,14 +1,42 @@
-# speech to text and text to speech
-realtimestt==0.3.104
-realtimetts[kokoro,coqui,orpheus]==0.5.5
+# 純STT語音識別依賴 - 移除所有TTS相關套件以節省CUDA記憶體
+# 注意：已禁用turn detection，因此不需要transformers套件
+
+# 核心語音識別依賴
+realtimestt>=0.3.104
+faster-whisper>=0.10.0
+openai-whisper
+
+# 音頻處理核心
+soundfile
+numpy
+scipy
+
+# 移除transformers相關依賴 (因為已禁用USE_TURN_DETECTION)
+# transformers>=4.20.0
+# tokenizers
+
+# 音頻設備相關 (STT需要音頻輸入)
+pyaudio
+sounddevice  # 替代portaudio的更現代選擇
 
 # webserver dependencies
 fastapi
-uvicorn
+uvicorn[standard]
+websockets
 
-# configuration
+# 配置檔案處理
 python-dotenv
 
-# llm providers
+# LLM提供者
 ollama
 openai
+
+# HTTP客戶端
+httpx
+requests
+
+# 基礎工具
+typing-extensions
+
+# 簡化的額外套件 (移除不必要的依賴)
+pydantic>=2.0  # FastAPI需要

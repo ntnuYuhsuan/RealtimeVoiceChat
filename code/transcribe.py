@@ -17,18 +17,20 @@ import re
 from typing import Optional, Callable, Any, Dict, List
 
 # --- Configuration Flags ---
-USE_TURN_DETECTION = True
+# 禁用turn detection以避免SentenceFinishedClassification模型問題
+USE_TURN_DETECTION = False  # 從True改為False，避免transformer模型加載問題
 START_STT_SERVER = False # Set to True to use the client/server version of RealtimeSTT
 
-# --- Recorder Configuration (Moved here for clarity, can be externalized) ---
-# Default config if none provided to constructor
+# --- 繁體中文STT特化配置 ---
 DEFAULT_RECORDER_CONFIG: Dict[str, Any] = {
     "use_microphone": False,
     "spinner": False,
-    "model": "base.en",
-    "realtime_model_type": "base.en",
-    "use_main_model_for_realtime": False,
-    "language": "en", # Default, will be overridden by source_language in __init__
+    # 改用多語言模型以支援繁體中文
+    "model": "base",  # 使用多語言版本而非base.en
+    "realtime_model_type": "base",  # 使用多語言版本
+    # 關鍵優化：使用主模型進行實時轉錄，提高準確性和穩定性
+    "use_main_model_for_realtime": True,  # 從False改為True，避免模型切換問題
+    "language": "zh",  # 設定為中文（繁體中文將由zh-TW環境變數控制）
     "silero_sensitivity": 0.05,
     "webrtc_sensitivity": 3,
     "post_speech_silence_duration": 0.7,
@@ -42,12 +44,14 @@ DEFAULT_RECORDER_CONFIG: Dict[str, Any] = {
     "beam_size": 3,
     "beam_size_realtime": 3,
     "no_log_file": True,
-    "wake_words": "jarvis",
+    # 移除英文特定的wake words，替換為通用設定
+    # "wake_words": "jarvis",  # 可選：移除或改為中文
     "wakeword_backend": "pvporcupine",
     "allowed_latency_limit": 500,
     # Callbacks will be added dynamically in _create_recorder
     "debug_mode": True,
-    "initial_prompt_realtime": "The sky is blue. When the sky... She walked home. Because he... Today is sunny. If only I...",
+    # 更新為繁體中文相關的初始提示
+    "initial_prompt_realtime": "今天天氣很好。當天空... 她走回家。因為他... 今天很晴朗。如果只是我...",
     "faster_whisper_vad_filter": False,
 }
 
