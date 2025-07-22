@@ -65,7 +65,7 @@ from speech_pipeline_manager import SpeechPipelineManager
 from colors import Colors
 
 # 設定為繁體中文
-LANGUAGE = "zh-TW"  # 修改為繁體中文
+LANGUAGE = "zh"  # 修改為標準Whisper語言代碼（支援中文）
 # 移除TTS相關超時設定
 # TTS_FINAL_TIMEOUT = 1.0
 

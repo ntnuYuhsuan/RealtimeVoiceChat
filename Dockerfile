@@ -118,13 +118,13 @@ COPY --chown=1001:1001 --from=builder /app/code /app/code
 # <<<--- 添加繁體中文語言環境支持 --->>>
 RUN echo "設定繁體中文語言環境支持..." && \
     apt-get update && apt-get install -y locales && \
-    locale-gen zh_TW.UTF-8 && \
+    locale-gen zh.UTF-8 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-ENV LANG=zh_TW.UTF-8
-ENV LANGUAGE=zh_TW:zh
-ENV LC_ALL=zh_TW.UTF-8
+ENV LANG=zh.UTF-8
+ENV LANGUAGE=zh:zh
+ENV LC_ALL=zh.UTF-8
 
 # Create a non-root user and group - DO NOT switch to it here
 RUN groupadd --gid 1001 appgroup && \
@@ -167,7 +167,7 @@ ENV HF_HOME=${HOME}/.cache/huggingface
 ENV TORCH_HOME=${HOME}/.cache/torch
 
 # 添加繁體中文STT特定環境變數
-ENV STT_LANGUAGE=zh-TW
+ENV STT_LANGUAGE=zh
 ENV STT_MODEL=base
 
 # Expose the port the FastAPI application runs on

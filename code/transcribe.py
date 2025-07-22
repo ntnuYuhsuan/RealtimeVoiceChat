@@ -30,7 +30,7 @@ DEFAULT_RECORDER_CONFIG: Dict[str, Any] = {
     "realtime_model_type": "base",  # 使用多語言版本
     # 關鍵優化：使用主模型進行實時轉錄，提高準確性和穩定性
     "use_main_model_for_realtime": True,  # 從False改為True，避免模型切換問題
-    "language": "zh",  # 設定為中文（繁體中文將由zh-TW環境變數控制）
+    "language": "zh",  # 使用標準Whisper語言代碼（統一支援中文）
     "silero_sensitivity": 0.05,
     "webrtc_sensitivity": 3,
     "post_speech_silence_duration": 0.7,
